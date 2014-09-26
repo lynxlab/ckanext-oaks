@@ -1,0 +1,14 @@
+{% ckan_extends %}
+
+{% block extras %}
+  {% if pkg_dict.eurovoc_uri %}
+    <tr>
+      <th scope="row" class="dataset-label">{{ _("EUROVOC descrizione") }}</th>
+      <td class="dataset-details">{{ pkg_dict.eurovoc_concept }}</td>
+    </tr>
+    <tr>
+      <th scope="row" class="dataset-label">{{ _("EUROVOC URI") }}</th>
+      <td class="dataset-details">{{ pkg_dict.eurovoc_uri }}</td>
+    </tr>
+  {% endif %}
+{% endblock %}

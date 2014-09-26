@@ -1,0 +1,11 @@
+setup.py
+ckanext/__init__.py
+ckanext/oaks/__init__.py
+ckanext/oaks/plugin.py
+ckanext_oaks.egg-info/PKG-INFO
+ckanext_oaks.egg-info/SOURCES.txt
+ckanext_oaks.egg-info/dependency_links.txt
+ckanext_oaks.egg-info/entry_points.txt
+ckanext_oaks.egg-info/namespace_packages.txt
+ckanext_oaks.egg-info/not-zip-safe
+ckanext_oaks.egg-info/top_level.txt

@@ -1,0 +1,16 @@
+{% ckan_extends %}
+
+{% block package_metadata_fields_custom %}
+    <!-- tipo dataset {{h.get_dataset_type()}} -->
+    {{ form.checkbox('eurovoc_checked', label=_('EUROVOC URI automatico'), id='eurovoc_checked',  value='EUROVOC checked', error=errors.eurovoc_checked, checked=true) }}
+    {{ form.input('eurovoc_concept', label=_('EUROVOC'), id='field-eurovoc_concept', placeholder=_('eurovoc concept'), value=data.eurovoc_concept, error=errors.eurovoc_concept, classes=['control-medium']) }}
+    {{ form.input('eurovoc_uri', label=_('EUROVOC URI'), id='field-eurovoc_uri', placeholder=_('eurovoc URI'), value=data.eurovoc_uri, error=errors.eurovoc_uri, classes=['control-medium']) }}
+{% endblock %}
+
+{# Remove 'free extras' from the package form. If you're using
+convert_to/from_extras() as we are with our 'custom_text' field below then
+you need to remove free extras from the form, or editing your custom field
+won't work. #}
+
+{% block custom_fields %}
+{% endblock %}
