@@ -76,30 +76,7 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         
     def get_helpers(self):
         return {'get_dataset_type': dataset_type}
-    
-    def after_upload(self, context, resource):
-#    def after_upload(self, context, pkg_dict, resource_id, file_path):
-        log.info('this is after_upload calling')
-
-        print resource
-        print '------------------'
-        print context
-    #    print '------------------'
-        print self
         
-        
-    #    try:
-    #        schema = _infer_schema_for_resource(resource)
-    #        schema = common.json.dumps(schema)
-    #        resource['schema'] = schema
-    #        toolkit.get_action('resource_update')(context, resource)
-    #    except (pandas.parser.CParserError, UnicodeDecodeError, ValueError,
-    #            unicodecsv.Error):
-    #        helpers.flash_error(
-    #            'Failed to calculate summary statistics for uploaded file. '
-    #            'No schema has been saved for this file.'
-    #        )    
-    
     def after_create(self, context, resource):
         log.info('this is after_create calling')
         print resource
@@ -118,8 +95,7 @@ def package_update_FN(context, data_dict):
 #    print '-------'
     log.info('this is package_update_FN calling')
     print data_dict
-#    print '-------'
-#    print context
+
     if ('eurovoc_checked' in data_dict):
         log.info('before eurovoc_term calling')
         eurovoc_data = eurovoc_term(data_dict)
@@ -129,13 +105,17 @@ def package_update_FN(context, data_dict):
 
     return logic.action.update.package_update(context, data_dict)
 
-def resource_create_FN(context, data_dict):
-   
-#    if (data_dict.has_key('already_created') and data_dict['already_created'] == True):
-#        pass
-#    else:
-#        data_dict['already_created'] = True
-#        return logic.action.create.resource_create(context, data_dict)    
+def resource_create_FN(context, data_dict): 
+    """Because of a bug of CKAN, the method gives back this error message:
+            RuntimeError: maximum recursion depth exceeded
+            
+            We are not using this method.
+            We use after_create instead.
+            
+            It seems fixed in version 2.2.1, 
+            but we are using the latest (ver. 2.3 at the moment) 
+            in which the fix was not included yet.
+    """
     return logic.get_action('resource_create')(context, data_dict)
 
     
@@ -169,10 +149,6 @@ def eurovoc_term(data_dict):
 #    return data_dict['eurovoc_uri']
     return eurovoc
     
-
-#  campi da utilizzare per generare la URI eurovoc
-#tags': [{'state': 'active', 'name': u'de'}, {'state': 'active', 'name': u'lavoro'}, {'state': 'active', 'name': u'offerte di lavoro'}]
-#'notes': u'description'
 
 def dataset_type():
     return 'ciccio'
