@@ -12,8 +12,6 @@ import ckan.logic as logic
 
 log = logging.getLogger(__name__)
 
-
-
 class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
     p.implements(p.IConfigurer)
     p.implements(p.IDatasetForm)
@@ -31,7 +29,7 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         return {
             'package_create': package_create_FN,
             'package_update': package_update_FN,
-#            'resource_create': resource_create_FN
+            'activity_create': activity_create_FN
         }   
 
     def _modify_package_schema(self, schema):
@@ -87,7 +85,11 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
 def package_create_FN(context, data_dict):
 #    print data_dict
     if ('eurovoc_checked' in data_dict):
-        data_dict['eurovoc_uri'] = eurovoc_term(data_dict)
+        eurovoc_data = eurovoc_term(data_dict)
+        if (len(eurovoc_data) > 0):
+            data_dict['eurovoc_uri'] = eurovoc_data['eurovoc_uri']
+            data_dict['eurovoc_concept'] = eurovoc_data['eurovoc_concept']
+
     return logic.action.create.package_create(context, data_dict)
 
 def package_update_FN(context, data_dict):
@@ -102,8 +104,27 @@ def package_update_FN(context, data_dict):
         if (len(eurovoc_data) > 0):
             data_dict['eurovoc_uri'] = eurovoc_data['eurovoc_uri']
             data_dict['eurovoc_concept'] = eurovoc_data['eurovoc_concept']
+            
 
     return logic.action.update.package_update(context, data_dict)
+
+def activity_create_FN(context, activity_dict, **kw):
+
+    """Create a new activity stream activity.
+        You must be a sysadmin to create new activities.
+        Parameters
+        * user_id (string) - the name or id of the user who carried out the activity, e.g. 'seanh'
+        * object_id - the name or id of the object of the activity, e.g. 'my_dataset'
+        * activity_type (string) - the type of the activity, this must be an activity type that CKAN
+        knows how to render, e.g. 'new package', 'changed user', 'deleted group'
+        etc.
+        * data (dictionary) - any additional data about the activity
+        Returns the newly created activity
+        Return type dictionary"""
+
+    log.info('activity_create_FN calling')
+    return logic.action.create.activity_create(context, activity_dict, **kw)
+
 
 def resource_create_FN(context, data_dict): 
     """Because of a bug of CKAN, the method gives back this error message:
