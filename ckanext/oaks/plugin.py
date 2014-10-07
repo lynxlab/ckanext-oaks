@@ -1,5 +1,10 @@
 import config
 
+
+import pylons.config as CKAN_config
+
+import platform
+
 import urllib2
 import urllib
 import json
@@ -9,6 +14,14 @@ import ckan.plugins as p
 import ckan.plugins.toolkit as tk
 import ckan.lib.uploader as uploader
 import ckan.logic as logic
+
+#import refine.refine_oaks as refine_oaks
+#import refine.refine_lib as refine_oaks
+
+#import csvutilities.csvclean as csvclean
+import csvutilities.oaks_csvclean as oaks_csvclean
+import inspect
+from os.path import split
 
 log = logging.getLogger(__name__)
 
@@ -74,16 +87,70 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         
     def get_helpers(self):
         return {'get_dataset_type': dataset_type}
+    
+    def before_create(self, context, resource):
+        log.info('this is before_create calling')
+        print resource
+        if ('url_type' in resource and resource['url_type'] == 'upload' and to_upper(resource['format']) == 'CSV'):
+            log.info('uploaded file: ' + resource['url'])
+    
         
     def after_create(self, context, resource):
         log.info('this is after_create calling')
         print resource
-        print '----'
-        print context
+        if (resource['url_type'] == 'upload' and to_upper(resource['format']) == 'CSV') :
+            log.info('uploaded file: ' + resource['url']+'----------\n')
+            """ CSVKIT 
+            """
+#            csvclean = CSVClean()
+#            print inspect.getmembers(csvclean)
+            #print inspect.getmoduleinfo('/usr/lib/ckan/default/src/ckan/ckanext-oaks/ckanext/oaks/csvutilities/csvclean.py')
+            slash = '/'
+            if 'windows' in platform.system():
+                slash = '\\'
+
+#            inputfile = '/var/www/html/BAD_messaggi_it.csv'
+            inputfile = resource['url']
+            
+            basedir =  CKAN_config.get( 'ckan.storage_path' )
+            print '*******\n'+basedir
+            id_resource = resource['id']
+            file_name = id_resource[6:len(id_resource)]
+            
+            inputfile = basedir+slash+'resources/'+id_resource[0:3]+slash+id_resource[3:6]+slash+file_name
+            
+            print '\n'+inputfile
+            print '\n'+file_name
+            print '\n'+basedir
+            
+            utility = oaks_csvclean.OAKSClean(inputfile)
+#            print inspect.getargspec(utility.main)
+#            print utility
+            dryRun = True
+#             input_file = resource['url']
+            
+            resultCleanCheck = utility.main(dryRun)
+            print resultCleanCheck
+            resource['csvclean'] = resultCleanCheck
+#            csvclean.CSVClean.main(resource['url'])
+            
+            
+            # INIZIO OpeRefine
+#            OR_server = refine_oaks.RefineServer()
+#            refineObj = refine_oaks.Refine(OR_server)
+#            project_file = None
+#            project_options = {}
+#            project_name = 'file_test_csv'
+#            project_url = resource['url']
+#            project_format = 'text/line-based/*sv'
+#            
+#            refineProject = refineObj.new_project(project_url=resource['url'],project_name='nome progetto',project_format= 'text/line-based/*sv' ,**project_options)
+#            refineProjects = refineObj.list_projects().items()
+            #FINE OpenRefine
+
     
 
 def package_create_FN(context, data_dict):
-#    print data_dict
     if ('eurovoc_checked' in data_dict):
         eurovoc_data = eurovoc_term(data_dict)
         if (len(eurovoc_data) > 0):
@@ -96,7 +163,7 @@ def package_update_FN(context, data_dict):
 #    print tk.request.params
 #    print '-------'
     log.info('this is package_update_FN calling')
-    print data_dict
+#    print data_dict
 
     if ('eurovoc_checked' in data_dict):
         log.info('before eurovoc_term calling')
@@ -221,3 +288,14 @@ def urlopen_json(self, *args, **kwargs):
                          response.get('message', response.get('stack', response)))
         raise Exception(error_message)
     return response
+
+def to_upper(string):
+    """ Converte la stringa in maiuscolo."""
+    upper_case = ""
+    for character in string:
+        if 'a' <= character <= 'z':
+            location = ord(character) - ord('a')
+            new_ascii = location + ord('A')
+            character = chr(new_ascii)
+        upper_case = upper_case + character
+    return upper_case
