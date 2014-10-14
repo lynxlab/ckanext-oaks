@@ -1,7 +1,9 @@
 import config
 
-
 import pylons.config as CKAN_config
+#from pylons import request
+
+from beaker.middleware import SessionMiddleware
 
 import platform
 
@@ -22,6 +24,7 @@ import ckan.logic as logic
 import csvutilities.oaks_csvclean as oaks_csvclean
 import inspect
 from os.path import split
+from dbf import Null
 
 log = logging.getLogger(__name__)
 
@@ -32,12 +35,19 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
     p.implements(p.IActions)
     p.implements(p.ITemplateHelpers)
     
+    def __init__(self, *args, **kwargs):
+        wsgi_app = SessionMiddleware(None, None)
+        self.session = wsgi_app.session
+        
+    
     def update_config(self, config):
         log.debug('this is update_config calling')
         # Add this plugin's templates dir to CKAN's extra_template_paths, so
         # that CKAN will use this plugin's custom templates.
         tk.add_template_directory(config, 'templates')    
-        
+        # Add the extension public directory so we can serve our own content
+        tk.add_public_directory(config, 'templates/public')
+                
     def get_actions(self):
         return {
             'package_create': package_create_FN,
@@ -86,7 +96,9 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
 
         
     def get_helpers(self):
-        return {'get_dataset_type': dataset_type}
+        return {'get_result_checked_csv': get_result_checked_csv,
+                'get_dataset_type': dataset_type
+                }
     
     def before_create(self, context, resource):
         log.info('this is before_create calling')
@@ -96,24 +108,21 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
     
         
     def after_create(self, context, resource):
+        ''' After created resource: check CSV file '''
         log.info('this is after_create calling')
-        print resource
+#        print resource
         if (resource['url_type'] == 'upload' and to_upper(resource['format']) == 'CSV') :
             log.info('uploaded file: ' + resource['url']+'----------\n')
             """ CSVKIT 
             """
-#            csvclean = CSVClean()
-#            print inspect.getmembers(csvclean)
             #print inspect.getmoduleinfo('/usr/lib/ckan/default/src/ckan/ckanext-oaks/ckanext/oaks/csvutilities/csvclean.py')
             slash = '/'
             if 'windows' in platform.system():
                 slash = '\\'
 
-#            inputfile = '/var/www/html/BAD_messaggi_it.csv'
-            inputfile = resource['url']
+#            inputfile = resource['url']
             
             basedir =  CKAN_config.get( 'ckan.storage_path' )
-            print '*******\n'+basedir
             id_resource = resource['id']
             file_name = id_resource[6:len(id_resource)]
             
@@ -132,6 +141,7 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
             resultCleanCheck = utility.main(dryRun)
             print resultCleanCheck
             resource['csvclean'] = resultCleanCheck
+            self.csvclean = resultCleanCheck
 #            csvclean.CSVClean.main(resource['url'])
             
             
@@ -148,7 +158,64 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
 #            refineProjects = refineObj.list_projects().items()
             #FINE OpenRefine
 
+    def after_update(self, context, resource):
+        ''' After updated resource: check CSV file '''
+        log.info('this is after_update calling')
+        #print inspect.getmembers(tk.request)
+#        print '--' + tk.request.params['upload'] + '--'
+        self.session['csvclean'] = None
+        self.session.save()
+        if ('upload' in tk.request.params and tk.request.params['upload'] != '' and resource['url_type'] == 'upload' and to_upper(resource['format']) == 'CSV') :
+            log.info('uploaded file: ' + resource['url']+'----------\n')
+            """ CSVKIT 
+            """
+#            print inspect.getmembers(csvclean)
+            #print inspect.getmoduleinfo('/usr/lib/ckan/default/src/ckan/ckanext-oaks/ckanext/oaks/csvutilities/csvclean.py')
+            slash = '/'
+            if 'windows' in platform.system():
+                slash = '\\'
+
+            # build path to file uploaded
+            basedir =  CKAN_config.get( 'ckan.storage_path' )
+            id_resource = resource['id']
+            file_name = id_resource[6:len(id_resource)]
+            inputfile = basedir+slash+'resources'+slash+id_resource[0:3]+slash+id_resource[3:6]+slash+file_name
+            
+            print '\n file uploded: '+inputfile
+#            print '\n app_globals: '+app_globals
+            
+            utility = oaks_csvclean.OAKSClean(inputfile)
+            dryRun = True
+            resultCleanCheck = utility.main(dryRun)
+            print 'check: ' + resultCleanCheck
+#            print inspect.getmembers(request.session)
+
+#            print inspect.getmembers(tk.request)
+
+            # Configure the SessionMiddleware
+#            session_opts = {
+#                'session.type': 'file',
+#                'session.cookie_expires': True,
+#            }
+#            OK_SESS = SessionMiddleware(Null, session_opts)
+#            print inspect.getmembers(OK_SESS)
+#            
+#            print OK_SESS.session
+            
+            self.session['csvclean'] = resultCleanCheck
+            self.session.save()
+            
+
+            
+#             self.session['csvclean'] = resultCleanCheck
+#             print self.session
+#             self.session.save()
     
+    def resultCleanCheck(self):
+        pass
+
+
+        
 
 def package_create_FN(context, data_dict):
     if ('eurovoc_checked' in data_dict):
@@ -238,6 +305,14 @@ def eurovoc_term(data_dict):
     return eurovoc
     
 
+#************
+# HELPERS
+#************
+def get_result_checked_csv(res):
+    ''' return the result of csv checked'''
+    if (res != ''):
+        return res
+    
 def dataset_type():
     return 'ciccio'
 
