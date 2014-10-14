@@ -1,0 +1,19 @@
+{% ckan_extends %}
+
+
+
+  {% block resource_additional_information %}
+	{% if session['csvclean'] != None and res['url_type'] == 'upload' %}
+	 <section class= "module-content">
+	 	<div class="alert alert-error">
+	         <h2>{{ _('risultati pulizia file') }}</h2>
+	         {{ session['csvclean'] }}
+	         {{ h.get_result_checked_csv(session['csvclean']) }}
+	         {{ res }}
+		</div>
+	 </section>
+	 
+	{% endif %} 
+	
+	{{ super() }}
+  {% endblock %}
