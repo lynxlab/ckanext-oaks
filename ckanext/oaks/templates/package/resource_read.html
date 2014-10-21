@@ -3,7 +3,9 @@
 
 
   {% block resource_additional_information %}
-	{% if session['csvclean'] != None and res['url_type'] == 'upload' %}
+	{{ response }}
+	{{ session }}
+	{% if session['csvclean'] and session['csvclean'] != None and request['upload'] != '' %}
 	 <section class= "module-content">
 	 	<div class="alert alert-error">
 	         <h2>{{ _('risultati pulizia file') }}</h2>

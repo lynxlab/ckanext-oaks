@@ -17,6 +17,10 @@ import ckan.plugins.toolkit as tk
 import ckan.lib.uploader as uploader
 import ckan.logic as logic
 
+import ckan.lib.base as base
+
+import re
+
 #import refine.refine_oaks as refine_oaks
 #import refine.refine_lib as refine_oaks
 
@@ -52,6 +56,7 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         return {
             'package_create': package_create_FN,
             'package_update': package_update_FN,
+#            'resource_show': resource_show_FN,
             'activity_create': activity_create_FN
         }   
 
@@ -110,8 +115,11 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
     def after_create(self, context, resource):
         ''' After created resource: check CSV file '''
         log.info('this is after_create calling')
-#        print resource
-        if (resource['url_type'] == 'upload' and to_upper(resource['format']) == 'CSV') :
+        self.session['csvclean'] = None
+        self.session.save()
+        if ('upload' in tk.request.params and tk.request.params['upload'] != '' and resource['url_type'] == 'upload' 
+            and to_upper(resource['format']) == 'CSV') :
+#        if (resource['url_type'] == 'upload' and to_upper(resource['format']) == 'CSV') :
             log.info('uploaded file: ' + resource['url']+'----------\n')
             """ CSVKIT 
             """
@@ -120,29 +128,36 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
             if 'windows' in platform.system():
                 slash = '\\'
 
-#            inputfile = resource['url']
-            
+            # build path to file uploaded
             basedir =  CKAN_config.get( 'ckan.storage_path' )
             id_resource = resource['id']
             file_name = id_resource[6:len(id_resource)]
+            inputfile = basedir+slash+'resources'+slash+id_resource[0:3]+slash+id_resource[3:6]+slash+file_name
             
-            inputfile = basedir+slash+'resources/'+id_resource[0:3]+slash+id_resource[3:6]+slash+file_name
-            
-            print '\n'+inputfile
-            print '\n'+file_name
-            print '\n'+basedir
+            print '\n file uploded: '+inputfile+'\n'
+            print resource
+#            print '\n app_globals: '+app_globals
             
             utility = oaks_csvclean.OAKSClean(inputfile)
-#            print inspect.getargspec(utility.main)
-#            print utility
             dryRun = True
-#             input_file = resource['url']
-            
             resultCleanCheck = utility.main(dryRun)
-            print resultCleanCheck
-            resource['csvclean'] = resultCleanCheck
-            self.csvclean = resultCleanCheck
-#            csvclean.CSVClean.main(resource['url'])
+            print 'check: ' + resultCleanCheck
+            
+            if resultCleanCheck != None:
+                self.session['csvclean'] = resultCleanCheck
+                self.session.save()
+                url_uploaded_file = resource['url']
+                p = re.compile(u'/dataset/(.+)/resource')
+                re_res = re.search(p, url_uploaded_file)
+                print re_res.group(1) 
+                id_dataset = re_res.group(1)
+                
+                print 'prima di redirect: ' + resultCleanCheck +'----------\n'
+#                redirect(h.url_for(controller='package', action='resource_read',id=id, resource_id=resource_id))
+                tk.redirect_to(controller='package', action='resource_read',id=id_dataset, resource_id=id_resource)
+                print 'dopo redirect: ' + resultCleanCheck +'----------\n'
+
+#                tk.redirect_to('resource_read', id=id_resource) # id='changed')
             
             
             # INIZIO OpeRefine
@@ -213,6 +228,27 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
     
     def resultCleanCheck(self):
         pass
+    
+def resource_show_FN(context, data_dict): 
+    """Because of a bug of CKAN, the method gives back this error message:
+            RuntimeError: maximum recursion depth exceeded
+            
+            We are not using this method.
+            We use after_create instead.
+            
+            It seems fixed in version 2.2.1, 
+            but we are using the latest (ver. 2.3 at the moment) 
+            in which the fix was not included yet.
+    """
+    wsgi_app = SessionMiddleware(None, None)
+    session = wsgi_app.session
+    session['csvclean'] = None
+    session.save()
+    log.info('resource_show')
+
+    return logic.get_action('resource_show')(context, data_dict)
+    
+
 
 
         
@@ -273,7 +309,6 @@ def resource_create_FN(context, data_dict):
     """
     return logic.get_action('resource_create')(context, data_dict)
 
-    
 
 def eurovoc_term(data_dict):
     log.info('this is eurovoc_term calling 1')
@@ -310,6 +345,13 @@ def eurovoc_term(data_dict):
 #************
 def get_result_checked_csv(res):
     ''' return the result of csv checked'''
+    wsgi_app = SessionMiddleware(None, None)
+    session = wsgi_app.session
+    print session
+    session['csvclean'] = None
+    session.save()
+    print session
+    log.info('checked helper')
     if (res != ''):
         return res
     

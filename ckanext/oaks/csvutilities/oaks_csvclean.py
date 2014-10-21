@@ -66,7 +66,7 @@ class OAKSClean(CSVClean):
     def main(self, dryRun):
         reader = CSVKitReader(self.input_file, **self.reader_kwargs)
 #         reader = CSVKitReader(self.file_name)
-        csvErrorCheked = ''
+        csvErrorCheked = None
         
 #         print 'dryRun: '
 #         print dryRun
@@ -80,6 +80,7 @@ class OAKSClean(CSVClean):
                 pass
             
             if checker.errors:
+                csvErrorCheked = ''
                 for e in checker.errors:
 #                    self.output_file.write('Line %i: %s\n' % (e.line_number, e.msg))
                     csvErrorCheked += ('Line %i: %s\n' % (e.line_number, e.msg))
