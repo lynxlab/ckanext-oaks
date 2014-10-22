@@ -119,7 +119,6 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         self.session.save()
         if ('upload' in tk.request.params and tk.request.params['upload'] != '' and resource['url_type'] == 'upload' 
             and to_upper(resource['format']) == 'CSV') :
-#        if (resource['url_type'] == 'upload' and to_upper(resource['format']) == 'CSV') :
             log.info('uploaded file: ' + resource['url']+'----------\n')
             """ CSVKIT 
             """
@@ -133,15 +132,10 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
             id_resource = resource['id']
             file_name = id_resource[6:len(id_resource)]
             inputfile = basedir+slash+'resources'+slash+id_resource[0:3]+slash+id_resource[3:6]+slash+file_name
-            
-            print '\n file uploded: '+inputfile+'\n'
-            print resource
-#            print '\n app_globals: '+app_globals
-            
+                        
             utility = oaks_csvclean.OAKSClean(inputfile)
             dryRun = True
             resultCleanCheck = utility.main(dryRun)
-            print 'check: ' + resultCleanCheck
             
             if resultCleanCheck != None:
                 self.session['csvclean'] = resultCleanCheck
@@ -149,16 +143,10 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
                 url_uploaded_file = resource['url']
                 p = re.compile(u'/dataset/(.+)/resource')
                 re_res = re.search(p, url_uploaded_file)
-                print re_res.group(1) 
-                id_dataset = re_res.group(1)
-                
-                print 'prima di redirect: ' + resultCleanCheck +'----------\n'
-#                redirect(h.url_for(controller='package', action='resource_read',id=id, resource_id=resource_id))
-                tk.redirect_to(controller='package', action='resource_read',id=id_dataset, resource_id=id_resource)
-                print 'dopo redirect: ' + resultCleanCheck +'----------\n'
-
-#                tk.redirect_to('resource_read', id=id_resource) # id='changed')
-            
+                if (re_res != None):
+                    id_dataset = re_res.group(1)
+                    #                redirect(h.url_for(controller='package', action='resource_read',id=id, resource_id=resource_id))
+                    tk.redirect_to(controller='package', action='resource_read',id=id_dataset, resource_id=id_resource)
             
             # INIZIO OpeRefine
 #            OR_server = refine_oaks.RefineServer()
@@ -177,7 +165,6 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         ''' After updated resource: check CSV file '''
         log.info('this is after_update calling')
         #print inspect.getmembers(tk.request)
-#        print '--' + tk.request.params['upload'] + '--'
         self.session['csvclean'] = None
         self.session.save()
         if ('upload' in tk.request.params and tk.request.params['upload'] != '' and resource['url_type'] == 'upload' and to_upper(resource['format']) == 'CSV') :
@@ -196,27 +183,14 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
             file_name = id_resource[6:len(id_resource)]
             inputfile = basedir+slash+'resources'+slash+id_resource[0:3]+slash+id_resource[3:6]+slash+file_name
             
-            print '\n file uploded: '+inputfile
-#            print '\n app_globals: '+app_globals
-            
             utility = oaks_csvclean.OAKSClean(inputfile)
             dryRun = True
             resultCleanCheck = utility.main(dryRun)
-            print 'check: ' + resultCleanCheck
+            print resultCleanCheck
 #            print inspect.getmembers(request.session)
 
 #            print inspect.getmembers(tk.request)
 
-            # Configure the SessionMiddleware
-#            session_opts = {
-#                'session.type': 'file',
-#                'session.cookie_expires': True,
-#            }
-#            OK_SESS = SessionMiddleware(Null, session_opts)
-#            print inspect.getmembers(OK_SESS)
-#            
-#            print OK_SESS.session
-            
             self.session['csvclean'] = resultCleanCheck
             self.session.save()
             
@@ -347,13 +321,16 @@ def get_result_checked_csv(res):
     ''' return the result of csv checked'''
     wsgi_app = SessionMiddleware(None, None)
     session = wsgi_app.session
-    print session
+    csvclean = session['csvclean']
+#    print session
     session['csvclean'] = None
     session.save()
-    print session
-    log.info('checked helper')
-    if (res != ''):
-        return res
+#    log.info('checked helper')
+#    return value.replace('\n','<br>\n')
+    #return csvclean.replace('\n','<br />\n') 
+    return ''
+#     if (res != ''):
+#         return res
     
 def dataset_type():
     return 'ciccio'

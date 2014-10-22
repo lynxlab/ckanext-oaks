@@ -3,15 +3,15 @@
 
 
   {% block resource_additional_information %}
-	{{ response }}
-	{{ session }}
 	{% if session['csvclean'] and session['csvclean'] != None and request['upload'] != '' %}
 	 <section class= "module-content">
 	 	<div class="alert alert-error">
-	         <h2>{{ _('risultati pulizia file') }}</h2>
-	         {{ session['csvclean'] }}
+	 		 
+	         <h2>{{ _('risultati controllo file') }}</h2>
+	         {% for line_error in session['csvclean'] %}
+	         	{{ line_error }} <br />
+          	 {% endfor %}
 	         {{ h.get_result_checked_csv(session['csvclean']) }}
-	         {{ res }}
 		</div>
 	 </section>
 	 

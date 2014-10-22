@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from pylons.i18n.translation import _, ungettext
 from csvkit.utilities.csvclean import CSVClean
 
 from csvkit import CSVKitReader, CSVKitWriter
@@ -80,12 +80,13 @@ class OAKSClean(CSVClean):
                 pass
             
             if checker.errors:
-                csvErrorCheked = ''
+                csvErrorCheked = []
                 for e in checker.errors:
 #                    self.output_file.write('Line %i: %s\n' % (e.line_number, e.msg))
-                    csvErrorCheked += ('Line %i: %s\n' % (e.line_number, e.msg))
+                    csvErrorCheked.append(_('Linea %i: %s\n') % (e.line_number+1, e.msg))                    
+                    #csvErrorCheked += ('Line %i: %s\n' % (e.line_number, e.msg))
                     print csvErrorCheked
-                    return csvErrorCheked
+                return csvErrorCheked
 #             else:
 #                 self.output_file.write('No errors.\n')
             
