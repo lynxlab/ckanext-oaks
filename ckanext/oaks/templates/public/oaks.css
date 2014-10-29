@@ -1,0 +1,24 @@
+/* normalize style Drupal + CKAN */
+.site-footer, .masthead, .account-masthead  {
+background: #004444 url("../../../base/images/bg.png");
+}
+
+body {
+background: #004444 url("../../../base/images/bg.png");
+}
+
+.homepage .module-search .module-content, .homepage .module-search .tags {
+background-color: #004444;
+}
+
+.masthead {
+min-height: 103px;
+}
+
+.header-image img {
+margin-top: -17px;
+}
+
+.masthead .navigation .nav-pills li a:hover, .masthead .navigation .nav-pills li.active a {
+    background-color: #237434;
+}    
