@@ -7,6 +7,7 @@ from beaker.middleware import SessionMiddleware
 
 import platform
 
+import os
 import urllib2
 import urllib
 import json
@@ -24,8 +25,9 @@ import re
 #import refine.refine_oaks as refine_oaks
 #import refine.refine_lib as refine_oaks
 
-#import csvutilities.csvclean as csvclean
 import csvutilities.oaks_csvclean as oaks_csvclean
+import csvutilities.oaks_in2csv as oaks_convert
+
 import inspect
 from os.path import split
 from dbf import Null
@@ -51,6 +53,7 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         tk.add_template_directory(config, 'templates')    
         # Add the extension public directory so we can serve our own content
         tk.add_public_directory(config, 'templates/public')
+#        tk.add_resource('fanstatic', 'oaks')
                 
     def get_actions(self):
         return {
@@ -118,7 +121,7 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         self.session['csvclean'] = None
         self.session.save()
         if ('upload' in tk.request.params and tk.request.params['upload'] != '' and resource['url_type'] == 'upload' 
-            and to_upper(resource['format']) == 'CSV') :
+            and (to_upper(resource['format']) == 'CSV' or to_upper(resource['format']) == 'XLS' or to_upper(resource['format']) == 'XLSX')):
             log.info('uploaded file: ' + resource['url']+'----------\n')
             """ CSVKIT 
             """
@@ -129,37 +132,83 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
 
             # build path to file uploaded
             basedir =  CKAN_config.get( 'ckan.storage_path' )
+            site_url = CKAN_config.get('ckan.site_url')
             id_resource = resource['id']
             file_name = id_resource[6:len(id_resource)]
             inputfile = basedir+slash+'resources'+slash+id_resource[0:3]+slash+id_resource[3:6]+slash+file_name
-                        
-            utility = oaks_csvclean.OAKSClean(inputfile)
-            dryRun = True
-            resultCleanCheck = utility.main(dryRun)
             
-            if resultCleanCheck != None:
-                self.session['csvclean'] = resultCleanCheck
-                self.session.save()
-                url_uploaded_file = resource['url']
-                p = re.compile(u'/dataset/(.+)/resource')
-                re_res = re.search(p, url_uploaded_file)
-                if (re_res != None):
-                    id_dataset = re_res.group(1)
-                    #                redirect(h.url_for(controller='package', action='resource_read',id=id, resource_id=resource_id))
-                    tk.redirect_to(controller='package', action='resource_read',id=id_dataset, resource_id=id_resource)
+            # Get the dataset id
+            id_dataset = None
+            url_uploaded_file = resource['url']
+            p = re.compile(u'/dataset/(.+)/resource')
+            re_res = re.search(p, url_uploaded_file)
             
-            # INIZIO OpeRefine
-#            OR_server = refine_oaks.RefineServer()
-#            refineObj = refine_oaks.Refine(OR_server)
-#            project_file = None
-#            project_options = {}
-#            project_name = 'file_test_csv'
-#            project_url = resource['url']
-#            project_format = 'text/line-based/*sv'
-#            
-#            refineProject = refineObj.new_project(project_url=resource['url'],project_name='nome progetto',project_format= 'text/line-based/*sv' ,**project_options)
-#            refineProjects = refineObj.list_projects().items()
-            #FINE OpenRefine
+            if (to_upper(resource['format']) == 'CSV'):
+                            
+                utility = oaks_csvclean.OAKSClean(inputfile)
+                dryRun = True
+                resultCleanCheck = utility.main(dryRun)
+                
+                if resultCleanCheck != None:
+                    self.session['csvclean'] = resultCleanCheck
+                    self.session.save()
+                    if (re_res != None):
+                        id_dataset = re_res.group(1)
+                        #                redirect(h.url_for(controller='package', action='resource_read',id=id, resource_id=resource_id))
+                        tk.redirect_to(controller='package', action='resource_read',id=id_dataset, resource_id=id_resource)
+            elif (to_upper(resource['format']) == 'XLS' or to_upper(resource['format']) == 'XLSX'):
+                args = None
+                last_period = file_name.rfind('.')
+                # extension = file_name[last_period + 1:]
+                extension = resource['format'].lower()
+                #file_name_no_extension = file_name[0:last_period]
+                
+                # check dir in which save converted file. If not exists need to create it
+                dir_error = False
+                output_dir = basedir+slash+'storage'+slash+'oaks'
+                if not os.path.exists(output_dir):
+                    try:
+                        os.makedirs(output_dir)
+                    except OSError:
+                        if not os.path.isdir(path):
+                            dir_error = True
+                
+                if not dir_error:
+                    output_file = basedir+slash+'storage'+slash+'oaks'+slash+id_resource+'.csv'
+                    #es.: output_file = /var/lib/ckan/default/storage/oaks/id_risorsa.csv
+                    # corrispodente URL: http://ckan_URL/oaks/id_risorsa.csv
+                    print 'convert: '+output_file
+                    utility = oaks_convert.OAKSIn2CSV(inputfile, args, output_file, extension)
+                    utility.main()
+                    
+                    if (re_res != None):
+                        if os.path.isfile(output_file):
+                                new_resource_url = site_url+slash+'oaks'+slash+id_resource+'.csv'
+                                id_dataset = re_res.group(1)
+                                data_dict = {}
+                                data_dict['package_id'] = id_dataset
+                                data_dict['url'] = new_resource_url
+                                data_dict['format'] = 'csv'
+                                data_dict['name'] = resource['name']
+                                data_dict['description'] = resource['description']
+                                
+                                logic.action.create.resource_create(context, data_dict)
+                                
+                
+                
+            
+                # INIZIO OpeRefine
+    #            OR_server = refine_oaks.RefineServer()
+    #            refineObj = refine_oaks.Refine(OR_server)
+    #            project_file = None
+    #            project_options = {}
+    #            project_name = 'file_test_csv'
+    #            project_url = resource['url']
+    #            project_format = 'text/line-based/*sv'
+    #            
+    #            refineProject = refineObj.new_project(project_url=resource['url'],project_name='nome progetto',project_format= 'text/line-based/*sv' ,**project_options)
+    #            refineProjects = refineObj.list_projects().items()
+                #FINE OpenRefine
 
     def after_update(self, context, resource):
         ''' After updated resource: check CSV file '''
