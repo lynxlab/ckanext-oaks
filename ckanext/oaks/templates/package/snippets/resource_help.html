@@ -1,31 +1,39 @@
 <section class="module module-narrow module-shallow">
-  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('What\'s a resource?') }}</h2>
+  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('Formati di risorsa') }}</h2>
   <div class="module-content">
-    <p>{{ _('A resource can be any file or link to a file containing useful data.') }}</p>
-  </div>
-  
-  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('Formati dei tipi di risorsa') }}</h2>
-  <div class="module-content">
-    <p>{{ _('I tipi di risorse più comuni sono: CSV, shp, XML') }}</p>
+    <p>{{ _('I formati più comuni delle risorse sono: CSV, SHP, XML, RDF') }}</p>
   </div>  
-  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('file CSV corretti') }}</h2>
+  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('File CSV corretti') }}</h2>
   <div class="module-content">
     <p>{{ _('Per i file CSV è importante seguire poche semplici regole prima di fare l\'upload:') }}</p>
 	<ul>
 	<li>
-		{{ _('Verificare che nella prima riga ci siano i nomi delle colonne') }}
+		{{ _('Nomi delle colonne nella prima riga') }}
 	</li>
 	<li>
-		{{ _('Verificare che le colonne siano separate da , (virgola)') }}
+		{{ _('Colonne separate da , (virgola)') }}
 	</li>
 	<li>
-		{{ _('Verificare che i dati nelle colonne siano compresi tra "') }}
+		{{ _('Dati nelle colonne compresi tra "') }}
 	</li>
 	</ul>    
   </div>
-  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('Pulizia del file') }}</h2>
+
+  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('Controllo dei file CSV') }}</h2>
   <div class="module-content">
-    <p>{{ _('Al termine dell\'upload i file di tipo CSV verrano controllati per assicurarsi che non contengano errori') }}</p>
+    <p>{{ _('Al termine dell\'upload i file in formato CSV verrano controllati per assicurarsi che non contengano errori') }}</p>
   </div>  
   
+  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('Conversione di file Excell') }}</h2>
+  <div class="module-content">
+    <p>{{ _('Al termine dell\'upload i file in formato xls(x) verrano automaticamente convertiti in file CSV') }}</p>
+  </div>  
+
+  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('Trattamento di Shape file') }}</h2>
+  <div class="module-content">
+    <p>{{ _('Al termine dell\'upload i file in formato shape (devono essere compressi in zip) verrano inviati a Geonode per la generazione della preview geografica') }}</p>
+  </div>  
+
+
+    
 </section>

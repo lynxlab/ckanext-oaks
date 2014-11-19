@@ -1,0 +1,21 @@
+{% ckan_extends %}
+
+{% block secondary_content %}
+
+  {{ super() }}
+
+  <section class="module module-narrow module-shallow ">
+  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('Categorizzazione EUROVOC') }}</h2>
+    <ul class="nav nav-simple">
+      <div class="module-content">
+        <p>
+          {% trans %}
+          Il sistema è in grado di categorizzare le tag inserite secondo l'ontologia europea EUROVOC. 
+          Se si preferisce non usare il categorizzatore automatico si può inserire a mano una URI EUROVOC.
+          {% endtrans %}
+        </p>
+      </div>
+    </ul>
+  </section>
+  
+{% endblock %}
