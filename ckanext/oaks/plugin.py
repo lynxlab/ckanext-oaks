@@ -68,6 +68,8 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
             'eurovoc_uri': [tk.get_validator('ignore_missing'),
                             tk.get_converter('convert_to_extras')],
             'eurovoc_concept': [tk.get_validator('ignore_missing'),
+                            tk.get_converter('convert_to_extras')],        
+            'spatial': [tk.get_validator('ignore_missing'),
                             tk.get_converter('convert_to_extras')]        
         })
         return schema
@@ -88,6 +90,8 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
             'eurovoc_uri': [tk.get_converter('convert_from_extras'),
                             tk.get_validator('ignore_missing')],
             'eurovoc_concept': [tk.get_converter('convert_from_extras'),
+                            tk.get_validator('ignore_missing')],        
+            'spatial': [tk.get_converter('convert_from_extras'),
                             tk.get_validator('ignore_missing')]        
         })
         return schema
@@ -105,7 +109,9 @@ class oaksPlugin(p.SingletonPlugin, tk.DefaultDatasetForm):
         
     def get_helpers(self):
         return {'get_result_checked_csv': get_result_checked_csv,
-                'get_dataset_type': dataset_type
+                'get_dataset_type': dataset_type,
+                'get_geo_coordinates': get_geo_coordinates
+#                'get_dataset_spatial':get_dataset_spatial(dict)
                 }
     
     def before_create(self, context, resource):
@@ -270,10 +276,6 @@ def resource_show_FN(context, data_dict):
     log.info('resource_show')
 
     return logic.get_action('resource_show')(context, data_dict)
-    
-
-
-
         
 
 def package_create_FN(context, data_dict):
@@ -282,14 +284,17 @@ def package_create_FN(context, data_dict):
         if (len(eurovoc_data) > 0):
             data_dict['eurovoc_uri'] = eurovoc_data['eurovoc_uri']
             data_dict['eurovoc_concept'] = eurovoc_data['eurovoc_concept']
+    if ('lat' in data_dict) and ('lon' in data_dict):
+        spatial = dict()
+        spatial['type'] = 'Point'
+        spatial['coordinates'] = [float(data_dict['lon']),float(data_dict['lat'])]
+        data_dict['spatial'] =  json.dumps(spatial)       
 
     return logic.action.create.package_create(context, data_dict)
 
 def package_update_FN(context, data_dict):
 #    print tk.request.params
-#    print '-------'
-    log.info('this is package_update_FN calling')
-#    print data_dict
+#    log.info('this is package_update_FN calling')
 
     if ('eurovoc_checked' in data_dict):
         log.info('before eurovoc_term calling')
@@ -297,7 +302,12 @@ def package_update_FN(context, data_dict):
         if (len(eurovoc_data) > 0):
             data_dict['eurovoc_uri'] = eurovoc_data['eurovoc_uri']
             data_dict['eurovoc_concept'] = eurovoc_data['eurovoc_concept']
-            
+
+    if ('lat' in data_dict) and ('lon' in data_dict):
+        spatial = dict()
+        spatial['type'] = 'Point'
+        spatial['coordinates'] = [float(data_dict['lon']),float(data_dict['lat'])]
+        data_dict['spatial'] =  json.dumps(spatial)       
 
     return logic.action.update.package_update(context, data_dict)
 
@@ -383,6 +393,16 @@ def get_result_checked_csv(res):
     
 def dataset_type():
     return 'ciccio'
+
+def get_geo_coordinates(data_dict):
+    print data_dict
+    if ('spatial' in data_dict):
+        spatial_data_dict = json.loads(data_dict['spatial'])
+    else:
+        spatial_data_dict = False
+    
+    return spatial_data_dict
+
 
 def urlopen(server, data=None, params=None):
     """Open a API URL and with optional query params and GET data.

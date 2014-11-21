@@ -1,10 +1,19 @@
 {% ckan_extends %}
 
 {% block package_metadata_fields_custom %}
+	{% set spatial_data = h.get_geo_coordinates(data) %}
+	{% if spatial_data %}
+		{{spatial_data}}
+		{% set lat = spatial_data['coordinates'][1] %}
+		{% set lon = spatial_data['coordinates'][0] %}
+	{% endif %}
+	
     <!-- tipo dataset {{h.get_dataset_type()}} -->
     {{ form.checkbox('eurovoc_checked', label=_('EUROVOC URI automatico'), id='eurovoc_checked',  value='EUROVOC checked', error=errors.eurovoc_checked, checked=true) }}
     {{ form.input('eurovoc_concept', label=_('EUROVOC'), id='field-eurovoc_concept', placeholder=_('eurovoc concept'), value=data.eurovoc_concept, error=errors.eurovoc_concept, classes=['control-medium']) }}
     {{ form.input('eurovoc_uri', label=_('EUROVOC URI'), id='field-eurovoc_uri', placeholder=_('eurovoc URI'), value=data.eurovoc_uri, error=errors.eurovoc_uri, classes=['control-medium']) }}
+    {{ form.input('lat', label=_('Latitudine'), id='field-lat', placeholder=_('Latitudine'), value=lat, error=errors.lat, classes=['control-medium']) }}
+    {{ form.input('lon', label=_('Longitudine'), id='field-lon', placeholder=_('Longitudine'), value=lon, error=errors.lon, classes=['control-medium']) }}
 {% endblock %}
 
 {# Remove 'free extras' from the package form. If you're using
